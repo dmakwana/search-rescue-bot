@@ -1,3 +1,5 @@
+#include <stdint.h>
+
 #define keyA 97
 #define keyS 115
 #define keyD 100
@@ -11,14 +13,14 @@
 #define elevationPin 6
 
 int serialData = 0;
-int pitch;
-int roll;
-int elevation;
+uint8_t pitch;
+uint8_t roll;
+uint8_t elevation;
 
 
 void setup() {
-  pitch = 0;
-  roll = 0;
+  pitch = 128;
+  roll = 128;
   elevation = 0;
   Serial.begin(9600);
 }
@@ -28,22 +30,34 @@ void loop() {
   {
     serialData = Serial.read();
     if (serialData == keyA){
-      roll -= sensitivity;
+      if (roll>0){
+        roll -= sensitivity;
+      }
     }
     if (serialData == keyD){
-      roll += sensitivity;
+      if (roll<255){
+        roll += sensitivity;
+      }
     }
     if (serialData == keyS){
-      pitch -= sensitivity;
+      if (pitch>0){
+        pitch -= sensitivity;
+      }
     }
     if (serialData == keyW){
-      pitch += sensitivity;
+      if (pitch<255){
+        pitch += sensitivity;
+      }
     }
     if (serialData == keyC){
-      elevation -= sensitivity;
+      if (elevation>0){
+        elevation -= sensitivity;
+      }
     }
     if (serialData == keySpace){
-      elevation += sensitivity;
+      if (elevation<255){
+        elevation += sensitivity;
+      }
     }
     if (serialData == keyP){
       Serial.println(pitch);
