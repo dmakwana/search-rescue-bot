@@ -15,6 +15,9 @@
 #define elePin 5
 #define thrustPin 6
 #define rudderPin 9
+#define arm 48
+#define thrust0 56
+#define reset 114
 
 int serialData = 0;
 Servo pitchPPM;
@@ -61,7 +64,7 @@ bool changed = false;
 void setup() {
   pitch = 128;
   roll = 128;
-  elevation = 255;
+  elevation = 0;
   yaw = 128;
   rollPPM.attach(ailPin);
   pitchPPM.attach(elePin);
@@ -75,55 +78,71 @@ void loop() {
   if (Serial.available() > 0)
   {
     serialData = Serial.read();
-    if (serialData == keyA){
+    if (serialData == thrust0){
+      elevation = 0;
+      changed = true;
+    }
+    else if (serialData == arm){
+      pitch = 0;
+      yaw = 255;
+      changed = true;
+    }
+    else if (serialData == reset){
+      pitch = 128;
+      yaw = 128;
+      roll = 128;
+      elevation = 0;
+      changed = true;
+    }
+    else if (serialData == keyA){
       if (roll-sensitivity>0){
         roll -= sensitivity;
         changed = true;
       }
     }
-    if (serialData == keyD){
+    else if (serialData == keyD){
       if (roll+sensitivity<=255){
         roll += sensitivity;
         changed = true;
       }
     }
-    if (serialData == keyS){
+    else if (serialData == keyS){
       if (pitch-sensitivity>=0){
         pitch -= sensitivity;
         changed = true;
       }
     }
-    if (serialData == keyW){
+    else if (serialData == keyW){
       if (pitch+sensitivity<=255){
         pitch += sensitivity;
         changed = true;
       }
     }
-    if (serialData == keyC){
+    else if (serialData == keyC){
       if (elevation-sensitivity>=0){
         elevation -= sensitivity;
         changed = true;
       }
     }
-    if (serialData == keySpace){
+    else if (serialData == keySpace){
       if (elevation+sensitivity<=255){
         elevation += sensitivity;
         changed = true;
       }
     }
-    if (serialData == keyN){
+    else if (serialData == keyN){
       if (yaw-sensitivity>=0){
         yaw -= sensitivity;
         changed = true;
       }
     }
-    if (serialData == keyM){
+    else if (serialData == keyM){
       if (yaw+sensitivity<=255){
         yaw += sensitivity;
         changed = true;
       }
     }
-    if (serialData == keyP){
+    else if (serialData == keyP){
       Serial.print("Pitch: \t");
       Serial.println(pitch);
       Serial.print("Roll: \t");
@@ -132,6 +151,7 @@ void loop() {
       Serial.println(elevation);
       Serial.print("Yaw: \t");
       Serial.println(yaw);
+      Serial.println("\n");
     }
   }
   if (changed == true){
