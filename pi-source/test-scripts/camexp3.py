@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 import time
+import picamera
+import io
 
 def angle_cos(p0, p1, p2):
     d1, d2 = (p0-p1).astype('float'), (p2-p1).astype('float')
@@ -16,7 +18,7 @@ def find_squares(img):
                 bin = cv2.dilate(bin, None)
             else:
                 retval, bin = cv2.threshold(gray, thrs, 255, cv2.THRESH_BINARY)
-            bin, contours, hierarchy = cv2.findContours(bin, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+            contours, hierarchy = cv2.findContours(bin, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
             for cnt in contours:
                 cnt_len = cv2.arcLength(cnt, True)
                 cnt = cv2.approxPolyDP(cnt, 0.02*cnt_len, True)
@@ -74,9 +76,15 @@ with picamera.PiCamera() as camera:
     # to speed things up, lower the resolution of the camera
     camera.resolution = (1024, 768)
     for i in range(5):
+	print str(i) + "1"
         img = check_img(camera)
+	print str(i) + "2"
         squares = find_squares(img)
+	print str(i) + "3"
         cv2.drawContours( img, squares, -1, (0, 255, 0), 3 )
+	print str(i) + "4"
         cv2.imshow('squares', img)
+	cv2.waitKey(0)
+	cv2.destroyAllWindows()
         time.sleep(3)
 
