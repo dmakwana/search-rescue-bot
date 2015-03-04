@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <Servo.h>
+#include <SoftwareSerial.h>  
 
 #define rollNeutral 1484
 #define throttleMin 1880
@@ -17,6 +18,8 @@
 #define pitchPin 5
 #define throttlePin 6
 #define yawPin 9
+#define bluetoothTx = 2;
+#define bluetoothRx = 4;
 
 #define sensitivity 5
 #define keyA 97 // A
@@ -44,36 +47,7 @@ int throttle;
 int yaw;
 bool changed = false;
 
-//void setPwmFrequency(int pin, int divisor) {
-//  byte mode;
-//  if(pin == 5 || pin == 6 || pin == 9 || pin == 10) {
-//    switch(divisor) {
-//      case 1: mode = 0x01; break;
-//      case 8: mode = 0x02; break;
-//      case 64: mode = 0x03; break;
-//      case 256: mode = 0x04; break;
-//      case 1024: mode = 0x05; break;
-//      default: return;
-//    }
-//    if(pin == 5 || pin == 6) {
-//      TCCR0B = TCCR0B & 0b11111000 | mode;
-//    } else {
-//      TCCR1B = TCCR1B & 0b11111000 | mode;
-//    }
-//  } else if(pin == 3 || pin == 11) {
-//    switch(divisor) {
-//      case 1: mode = 0x01; break;
-//      case 8: mode = 0x02; break;
-//      case 32: mode = 0x03; break;
-//      case 64: mode = 0x04; break;
-//      case 128: mode = 0x05; break;
-//      case 256: mode = 0x06; break;
-//      case 1024: mode = 0x7; break;
-//      default: return;
-//    }
-//    TCCR2B = TCCR2B & 0b11111000 | mode;
-//  }
-//}
+SoftwareSerial bluetooth(bluetoothTx, bluetoothRx);
 
 void setNeutral(){
   yaw = yawNeutral;
