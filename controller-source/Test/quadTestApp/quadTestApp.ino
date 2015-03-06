@@ -1,10 +1,10 @@
 #include <stdint.h>
 #include <Servo.h> 
 
-#define rollNeutral 1500
+int rollNeutral = 1500;
 #define throttleMax 2000
-#define yawNeutral 1500
-#define pitchNeutral 1500
+int yawNeutral = 1500;
+int pitchNeutral = 1500;
 #define rollMin 1000 
 #define yawMin 1000
 #define pitchMin 1000
@@ -42,6 +42,8 @@
 #define throttle0 56 // 8
 #define reset 114 // r
 #define bluetooth Serial1
+#define negTr -2
+#define posTr 2
 
 int serialData = 0;
 Servo pitchPWM;
@@ -55,8 +57,10 @@ int throttle;
 int yaw;
 int flight;
 bool changed = false;
-int cmd[100];
+char cmd[100];
 int cmdIndex;
+String st;
+int tr;
 char c;
 
 int getVal() {
@@ -129,6 +133,46 @@ void loop() {
         Serial.println(throttle);
         changed = true;
       }
+      else if (cmd[0] == 'p'){
+        if (cmd[1] == '+'){
+          tr=posTr;
+        }
+        else if (cmd[1] == '-'){
+          tr=negTr;
+        }
+        pitchNeutral+=tr;
+        st = (String)"pt " + pitchNeutral + "\n";
+        bluetooth.print(st);
+        Serial.print("pitch trim: ");
+        Serial.println(pitchNeutral);  
+      }
+      else if (cmd[0] == 't'){
+        if (cmd[1] == '+'){
+          tr=posTr;
+        }
+        else if (cmd[1] == '-'){
+          tr=negTr;
+        }
+        rollNeutral+=tr;
+        st = (String)"rt " + rollNeutral + "\n";
+        bluetooth.print(st);
+        Serial.print("roll trim: ");
+        Serial.println(rollNeutral);  
+      }
+      else if (cmd[0] == 'y'){
+        if (cmd[1] == '+'){
+          tr=posTr;
+        }
+        else if (cmd[1] == '-'){
+          tr=negTr;
+        }
+        yawNeutral+=tr;
+        st = (String)"yt " + yawNeutral + "\n";
+        bluetooth.print(st);
+        Serial.print("yaw trim: ");
+        Serial.println(yawNeutral);  
+      }
+      
       cmdIndex = 0; // reset the cmdIndex
       
     } else {      
