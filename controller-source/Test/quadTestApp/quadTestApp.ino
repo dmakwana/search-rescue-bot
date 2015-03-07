@@ -23,7 +23,7 @@ int pitchNeutral = 1500;
 #define flightPin 10
 #define SerialTx 2
 #define SerialRx 4
-#define battery 0
+#define battery 1
 
 #define sensitivity 25
 #define keyA 97 // A
@@ -189,11 +189,13 @@ void loop() {
       changed = false;
     }
   }
-//  int batteryLevel=(analogRead(battery)-757/157)*100;
-//  String st = (String)"b " + batteryLevel + "\n";
-//  bluetooth.print(st);
-//  Serial.println("Battery: ");
-//  Serial.println(analogRead(battery));
+  float batteryLevel=(analogRead(battery)*15.0)/1024;
+  bluetooth.print("bl ");
+  bluetooth.print(batteryLevel);
+  bluetooth.print("\n");
+  Serial.print("bl ");
+  Serial.print(batteryLevel);
+  Serial.print("\n");
 }
 
 
