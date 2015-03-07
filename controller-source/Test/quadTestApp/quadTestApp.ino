@@ -172,14 +172,21 @@ void loop() {
         Serial.print("yaw trim: ");
         Serial.println(yawNeutral);  
       }
-      
-      cmdIndex = 0; // reset the cmdIndex
-      
+      else if(cmd[0]=='b'){
+        float batteryLevel=(analogRead(battery)*15.0)/1024;
+        bluetooth.print("bl ");
+        bluetooth.print(batteryLevel);
+        bluetooth.print("\n");
+        Serial.print("bl ");
+        Serial.print(batteryLevel);
+        Serial.print("\n");
+      }
+      cmdIndex = 0; // reset the cmdIndex  
     } else {      
       cmd[cmdIndex] = c;
       if(cmdIndex<99) cmdIndex++;
     }
- 
+   
     if (changed == true){
       rollPWM.writeMicroseconds(roll);
       pitchPWM.writeMicroseconds(pitch);
@@ -189,13 +196,6 @@ void loop() {
       changed = false;
     }
   }
-  float batteryLevel=(analogRead(battery)*15.0)/1024;
-  bluetooth.print("bl ");
-  bluetooth.print(batteryLevel);
-  bluetooth.print("\n");
-  Serial.print("bl ");
-  Serial.print(batteryLevel);
-  Serial.print("\n");
 }
 
 
