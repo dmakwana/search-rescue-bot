@@ -24,6 +24,8 @@ int pitchNeutral = 1500;
 #define SerialTx 2
 #define SerialRx 4
 #define battery 1
+#define heightTrig 23
+#define heightEcho 22
 
 #define sensitivity 25
 #define keyA 97 // A
@@ -62,6 +64,7 @@ int cmdIndex;
 String st;
 int tr;
 char c;
+bool throttleUp = false;
 
 int getVal() {
   
@@ -76,6 +79,11 @@ int getVal() {
 
 //SoftwareSerial Serial(SerialTx, SerialRx);
 
+void setPins(){
+  pinMode(heightEcho, INPUT);
+  pinMode(heightTrig, OUTPUT);
+}
+
 void setNeutral(){
   yaw = yawNeutral;
   pitch = pitchNeutral;
@@ -88,6 +96,7 @@ void setNeutral(){
 //}
 
 void setup() {
+  setPins();
   setNeutral();
   
   changed = true;
