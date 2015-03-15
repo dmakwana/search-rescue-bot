@@ -1,11 +1,13 @@
 #include <stdint.h>
 #include <Servo.h> 
 #include <NewPing.h>
+#include <Wire.h>
 
-int rollNeutral = 1500;
+int limit=1400;
+int rollNeutral = 1480;
 #define throttleMax 2000
 int yawNeutral = 1500;
-int pitchNeutral = 1500;
+int pitchNeutral = 1480;
 #define rollMin 1000 
 #define yawMin 1000
 #define pitchMin 1000
@@ -43,10 +45,14 @@ int pitchNeutral = 1500;
 #define throttle0 56 // 8
 #define reset 114 // r
 #define bluetooth Serial1
-#define negTr -2
-#define posTr 2
-#define k 3 
+#define negTr -1
+#define posTr 1
+#define nlimTr -5
+#define limTr 5
+#define k 2 
 
+//I2C Address
+#define SLAVE_ADDRESS 0x04
 
 int serialData = 0;
 Servo pitchPWM;
@@ -57,9 +63,12 @@ Servo flightPWM;
 int pitch;
 int roll;
 int throttle;
+int throttleByte;
 int yaw;
 int flight;
 bool changed = false;
+bool requireReset = true;
+bool sendThrottle = true;
 char cmd[100];
 int cmdIndex;
 String st;
@@ -68,15 +77,24 @@ char c;
 int change=1;
 long duration;
 long distance;
-bool hold = false;
-long holdVal=0;
+bool hold=false;
+bool takeoff = false;
+bool land=false;
+bool height=false;
+long holdVal=40;
 long throttleVal=0;
 int error=0;
+int average;
+
+//I2C Variables
+int number=0;
+int currentHeight = 0;
+int state = 0;
 
 int getVal() {
   
   int val = 0;
-       for(int i=2; cmd[i]!=0; i++) { // number begins at cmd[6]
+       for(int i=2; cmd[i]!=0; i++) { // currentHeight begins at cmd[6]
          val = val*10 + (cmd[i]-'0');
        }
        // if cmd is "speed 100", val will be 100        
@@ -97,25 +115,41 @@ void setNeutral(){
 NewPing sonar(trigPin, echoPin, 200);
 
 int getDistance(){
-  return sonar.ping_cm();
+  float alpha = 0.5; // factor to tune
+  average = alpha * sonar.ping_cm(); + (1-alpha) * average;
+  return average;
 }
   
 
 //void SerialConfig(){
 //}
 
-void setup() {
-  setNeutral();
-  
-  changed = true;
+void servo_attach(){
   rollPWM.attach(rollPin);
   pitchPWM.attach(pitchPin);
   throttlePWM.attach(throttlePin);
   yawPWM.attach(yawPin);
   flightPWM.attach(flightPin);
+  rollPWM.writeMicroseconds(rollNeutral);
+  pitchPWM.writeMicroseconds(pitchNeutral);
+  throttlePWM.writeMicroseconds(throttleMin);
+  yawPWM.writeMicroseconds(yawNeutral);
+  flightPWM.writeMicroseconds(flightMode1);
+}
+
+void setup() {
+  setNeutral();
+  changed = true;
+  
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
   //throttlePWM.writeMicroseconds(1000);
+  
+  // define callbacks for i2c communication
+  Wire.begin(SLAVE_ADDRESS);
+  Wire.onReceive(receiveData);
+  Wire.onRequest(sendData);
+  
   delay(1000);  // Short delay, wait for the Mate to send back CMD
   Serial.begin(115200);
   bluetooth.begin(115200);
@@ -123,12 +157,15 @@ void setup() {
 }
 
 void loop() {
-  getDistance();
+  currentHeight=getDistance();
   if (bluetooth.available() > 0)
   {
     c = (char)bluetooth.read();
     if(c=='\n') {
       hold=false;
+      land=false;
+      takeoff=false;
+      height=false;
       cmd[cmdIndex] = 0;
       
       if (cmd[0] == (char)unarm){
@@ -141,24 +178,41 @@ void loop() {
         throttle = throttleMin;
         roll = rollMin;
         changed = true;
+        requireReset = true;
         Serial.println("ARM!");
       }
       else if (cmd[0] == (char)reset){
         setNeutral();
         changed = true;
+        requireReset = false;
         Serial.println("RESET!");
       }
       else if (cmd[0] == (char)keyS){
-        throttle = getVal();
+        if (requireReset == false){
+          throttle = getVal();
+          changed = true;
+        }
         //Serial.print("Throttle:");
         //Serial.println(throttle);
-        changed = true;
       }
-      else if (cmd[0] == 'h'){
-        hold=true;
-        holdVal=getDistance();
-        throttleVal=throttle;
+      else if (cmd[0] == 'a'){
+        if (requireReset == false){
+          takeoff=true;
+          Serial.println("auto");
+        }
       }
+      else if (cmd[0] == 'n'){
+        servo_attach();
+      }
+      else if (cmd[0] == 'l'){
+        land=true;
+        Serial.println("land");
+      }
+//      else if (cmd[0] == 'h'){
+//        hold=true;
+//        holdVal=getDistance();
+//        throttleVal=throttle;
+//      }
       else if (cmd[0] == 'p'){
         if (cmd[1] == '+'){
           tr=posTr;
@@ -213,25 +267,16 @@ void loop() {
       }
       else if (cmd[0] == 'y'){
         if (cmd[1] == '+'){
-          tr=posTr;
+          tr=limTr;
         }
         else if (cmd[1] == '-'){
-          tr=negTr;
+          tr=nlimTr;
         }
-        yawNeutral+=tr;
-        st = (String)"yt " + yawNeutral + "\n";
+        limit+=tr;
+        st = (String)"yt " + limit + "\n";
         bluetooth.print(st);
         Serial.print("yaw trim: ");
-        Serial.println(yawNeutral);  
-      }
-      else if(cmd[0]=='b'){
-        float batteryLevel=(analogRead(battery)*15.0)/1024;
-        bluetooth.print("bl ");
-        bluetooth.print(batteryLevel);
-        bluetooth.print("\n");
-        Serial.print("bl ");
-        Serial.print(batteryLevel);
-        Serial.print("\n");
+        Serial.println(limit);  
       }
       cmdIndex = 0; // reset the cmdIndex  
     } else {      
@@ -240,7 +285,7 @@ void loop() {
     }    
   }
   if (changed == true){
-      //Serial.println(throttle);
+      Serial.println(throttle);
       rollPWM.writeMicroseconds(roll);
       pitchPWM.writeMicroseconds(pitch);
       throttlePWM.writeMicroseconds(throttle);
@@ -248,16 +293,59 @@ void loop() {
       flightPWM.writeMicroseconds(flight);
       changed = false;
   }
-  if (hold){
-    error=holdVal-getDistance();
-    Serial.print("Error: ");
-    Serial.println(error);
-    if (throttleVal+error*k<2000 && throttleVal+error*k>1000){
-      throttle=throttleVal+error*k;
+  if(takeoff==true){
+    if (throttle<limit){
+      throttle+=1;
+      changed=true;
+      delay(1);
     }
-    Serial.print("Throttle: ");
-    Serial.println(throttle);
-    changed=true;
+    else{
+      hold=true;
+      takeoff=false;
+    }
+  }
+  if(land==true){
+    if (throttle>1300){
+      throttle-=1;
+      changed=true;
+      delay(15);
+    }
+    else{
+      land=false;
+    }
+  }
+  if (hold){
+    if (currentHeight>holdVal){
+      height=true;
+    }
+    if(height){
+      error=holdVal-currentHeight;
+      if ((limit+error*k)<(limit+50) && (limit+error*k)>(limit-50)){
+        throttle=limit+error*k;
+      }
+      changed=true;
+    }
+  }
+}
+
+// callback for received data
+void receiveData(int byteCount){
+
+    while(Wire.available()) {
+        number = Wire.read();
+     }
+}
+
+// callback for sending data
+void sendData(){
+  if (sendThrottle){
+    throttleByte = throttle/10;
+    Wire.write(throttleByte);
+    sendThrottle = false;
+  }
+  else{
+    Wire.write(currentHeight);
+    sendThrottle = true;
   }
 }
 
