@@ -2,6 +2,7 @@
 #include <Servo.h> 
 #include <NewPing.h>
 #include <Wire.h>
+#include <PID_v1.h>
 
 int limit=1400;
 int rollNeutral = 1480;
@@ -49,7 +50,13 @@ int pitchNeutral = 1480;
 #define posTr 1
 #define nlimTr -5
 #define limTr 5
-#define k 2 
+#define k 5 
+
+
+// ------- ALTITUDE CONTROL SYSTEM
+double Setpoint, Input, Output;
+PID myPID(&Input, &Output, &Setpoint,2,5,1, DIRECT);
+
 
 //I2C Address
 #define SLAVE_ADDRESS 0x04
@@ -81,10 +88,11 @@ bool hold=false;
 bool takeoff = false;
 bool land=false;
 bool height=false;
-long holdVal=40;
+long holdVal=80;
 long throttleVal=0;
 int error=0;
-int average;
+double average;
+double sonarVal;
 
 //I2C Variables
 int number=0;
@@ -115,9 +123,17 @@ void setNeutral(){
 NewPing sonar(trigPin, echoPin, 200);
 
 int getDistance(){
-  float alpha = 0.5; // factor to tune
-  average = alpha * sonar.ping_cm(); + (1-alpha) * average;
-  return average;
+  float alpha = 0.2; // factor to tune
+  sonarVal = sonar.ping_cm();
+  //Serial.print("Height: ");
+  //Serial.println(sonarVal);
+  if (abs(sonarVal-average)<20){
+    average = alpha * sonarVal + (1-alpha) * average;
+    //Serial.println("*******************************************");
+  }
+  //Serial.print("Average: ");
+  //Serial.println(average);
+  return average; 
 }
   
 
@@ -151,13 +167,19 @@ void setup() {
   Wire.onRequest(sendData);
   
   delay(1000);  // Short delay, wait for the Mate to send back CMD
-  Serial.begin(115200);
+  Serial.begin(9600);
   bluetooth.begin(115200);
   cmdIndex = 0; 
 }
 
 void loop() {
   currentHeight=getDistance();
+//  Serial.print("Error: ");
+//  Serial.println(error);
+  //Serial.print("Hold: ");
+  //Serial.println(hold);
+//  Serial.print("Throttle: ");
+//  Serial.println(throttle);
   if (bluetooth.available() > 0)
   {
     c = (char)bluetooth.read();
@@ -285,7 +307,7 @@ void loop() {
     }    
   }
   if (changed == true){
-      Serial.println(throttle);
+      //Serial.println(throttle);
       rollPWM.writeMicroseconds(roll);
       pitchPWM.writeMicroseconds(pitch);
       throttlePWM.writeMicroseconds(throttle);
@@ -305,7 +327,7 @@ void loop() {
     }
   }
   if(land==true){
-    if (throttle>1300){
+    if (throttle>1100){
       throttle-=1;
       changed=true;
       delay(15);
@@ -317,10 +339,11 @@ void loop() {
   if (hold){
     if (currentHeight>holdVal){
       height=true;
+      limit+=200;
     }
     if(height){
       error=holdVal-currentHeight;
-      if ((limit+error*k)<(limit+50) && (limit+error*k)>(limit-50)){
+      if ((limit+error*k)<(limit+125) && (limit+error*k)>(limit-125)){
         throttle=limit+error*k;
       }
       changed=true;
