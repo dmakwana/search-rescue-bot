@@ -2,7 +2,7 @@
 #include <Servo.h> 
 #include <NewPing.h>
 #include <Wire.h>
-#include <PID_v1.h>
+//#include <PID_v1.h>
 
 int limit=1400;
 int rollNeutral = 1480;
@@ -54,8 +54,8 @@ int pitchNeutral = 1480;
 
 
 // ------- ALTITUDE CONTROL SYSTEM
-double Setpoint, Input, Output;
-PID myPID(&Input, &Output, &Setpoint,2,5,1, DIRECT);
+//double Setpoint, Input, Output;
+//PID myPID(&Input, &Output, &Setpoint,2,5,1, DIRECT);
 
 
 //I2C Address
@@ -88,11 +88,12 @@ bool hold=false;
 bool takeoff = false;
 bool land=false;
 bool height=false;
-long holdVal=80;
+long holdVal=70;
 long throttleVal=0;
 int error=0;
 double average;
 double sonarVal;
+int new_limit;
 
 //I2C Variables
 int number=0;
@@ -174,8 +175,7 @@ void setup() {
 
 void loop() {
   currentHeight=getDistance();
-//  Serial.print("Error: ");
-//  Serial.println(error);
+
   //Serial.print("Hold: ");
   //Serial.println(hold);
 //  Serial.print("Throttle: ");
@@ -320,6 +320,7 @@ void loop() {
       throttle+=1;
       changed=true;
       delay(1);
+      Serial.println(throttle);
     }
     else{
       hold=true;
@@ -337,16 +338,25 @@ void loop() {
     }
   }
   if (hold){
-    if (currentHeight>holdVal){
-      height=true;
-      limit+=200;
-    }
+    //Serial.print("Height: ");
+    //Serial.println(currentHeight);
+    
     if(height){
+      //Serial.println("hold");
       error=holdVal-currentHeight;
-      if ((limit+error*k)<(limit+125) && (limit+error*k)>(limit-125)){
-        throttle=limit+error*k;
+      //Serial.println(limit+error*k); 
+      if ((new_limit+error*k)<(new_limit+200) && (new_limit+error*k)>(new_limit-200)){
+        
+        throttle=new_limit+error*k;
+        Serial.println(throttle);
+        st = (String)"cl " + throttle + "\n";
+        bluetooth.print(st);
       }
       changed=true;
+    }
+    else if (currentHeight>holdVal){
+      height=true;
+      new_limit=limit+300;
     }
   }
 }
