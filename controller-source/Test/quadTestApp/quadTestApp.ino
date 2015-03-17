@@ -88,7 +88,7 @@ bool hold=false;
 bool takeoff = false;
 bool land=false;
 bool height=false;
-long holdVal=70;
+long holdVal=60;
 long throttleVal=0;
 int error=0;
 double average;
@@ -320,7 +320,8 @@ void loop() {
       throttle+=1;
       changed=true;
       delay(1);
-      Serial.println(throttle);
+      st = (String)"cl " + throttle + "\n";
+      bluetooth.print(st);
     }
     else{
       hold=true;
@@ -340,7 +341,6 @@ void loop() {
   if (hold){
     //Serial.print("Height: ");
     //Serial.println(currentHeight);
-    
     if(height){
       //Serial.println("hold");
       error=holdVal-currentHeight;
@@ -348,7 +348,7 @@ void loop() {
       if ((new_limit+error*k)<(new_limit+200) && (new_limit+error*k)>(new_limit-200)){
         
         throttle=new_limit+error*k;
-        Serial.println(throttle);
+        //Serial.println(throttle);
         st = (String)"cl " + throttle + "\n";
         bluetooth.print(st);
       }
@@ -356,7 +356,7 @@ void loop() {
     }
     else if (currentHeight>holdVal){
       height=true;
-      new_limit=limit+300;
+      new_limit=limit+100;
     }
   }
 }
