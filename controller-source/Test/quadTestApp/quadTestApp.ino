@@ -2,13 +2,10 @@
 #include <Servo.h> 
 #include <NewPing.h>
 #include <Wire.h>
-//#include <PID_v1.h>
 
 int limit=1400;
 int rollNeutral = 1480;
 #define throttleMax 2000
-int yawNeutral = 1500;
-int pitchNeutral = 1480;
 #define rollMin 1000 
 #define yawMin 1000
 #define pitchMin 1000
@@ -51,6 +48,7 @@ int pitchNeutral = 1480;
 #define nlimTr -5
 #define limTr 5
 #define k 5 
+#define RP_change 15
 
 
 // ------- ALTITUDE CONTROL SYSTEM
@@ -61,6 +59,8 @@ int pitchNeutral = 1480;
 //I2C Address
 #define SLAVE_ADDRESS 0x04
 
+int yawNeutral = 1500;
+int pitchNeutral = 1480;
 int serialData = 0;
 Servo pitchPWM;
 Servo rollPWM;
@@ -88,7 +88,7 @@ bool hold=false;
 bool takeoff = false;
 bool land=false;
 bool height=false;
-long holdVal=60;
+long holdVal=100;
 long throttleVal=0;
 int error=0;
 double average;
@@ -324,7 +324,7 @@ void loop() {
       bluetooth.print(st);
     }
     else{
-      hold=true;
+      //hold=true;
       takeoff=false;
     }
   }
@@ -352,12 +352,41 @@ void loop() {
         st = (String)"cl " + throttle + "\n";
         bluetooth.print(st);
       }
+      
       changed=true;
+      //Hovering over a square
+      if (number == 0){
+      //everything neutral
+        pitch = pitchNeutral;
+        roll = rollNeutral;
+        //Serial.println("Neutral");
+      }
+      else if (number == 2) {
+      //up
+        pitch = pitchNeutral-RP_change;
+        //Serial.println("Up");
+      }
+      else if (number == 1) {
+        pitch = pitchNeutral+RP_change;
+        //Serial.println("Down");
+      }
+      else if (number == 4) {
+      //left
+        roll = rollNeutral-RP_change;
+        //Serial.println("Left");
+      }
+      else if (number == 3) {
+      //right
+        roll = rollNeutral+RP_change;
+        //Serial.println("Right");
+      }
     }
     else if (currentHeight>holdVal){
       height=true;
-      new_limit=limit+100;
+      new_limit=limit;
     }
+    //Serial.print("Height");
+    //Serial.println(currentHeight);
   }
 }
 
