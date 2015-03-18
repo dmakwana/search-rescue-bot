@@ -40,11 +40,12 @@ while(1):
     if blobs:
         for blob in blobs:
             if blob.isSquare(0.1,0.1):
-		if foundSquare:
-		    dontoutput = True
-		    break    
-		foundSquare = True
-		square = blob
+                if foundSquare:
+                    dontoutput = True
+                    break    
+                foundSquare = True
+                square = blob
+
 	if not dontoutput:
 	    xdist = xcenter - blob.centroid()[0]
    	    ydist = ycenter - blob.centroid()[1]
