@@ -5,6 +5,17 @@ from SimpleCV import Camera
 import time
 import picamera
 import io
+import smbus
+
+bus = smbus.SMBus(1)
+address = 0x04
+def writeNumber(value):
+    bus.write_byte(address,value)
+    return -1
+
+def readNumber():
+    number = bus.read_byte(address)
+    return number
 
 cam = Camera(prop_set={"width":320,"height":240})
 #camera = picamera.PiCamera()
@@ -17,7 +28,7 @@ xdist = 0
 ydist = 0
 xcenter = 160
 ycenter = 120
-thres = 20
+thres = 5
 foundSquare = False
 square = 0
 dontoutput = False
@@ -40,13 +51,19 @@ while(1):
 	    if abs(xdist) > 20 and abs(xdist) > abs(ydist):
 		if xdist > 0:
 		    print "right"
+		    writeNumber(4)
 		else:
+		    writeNumber(3)
 		    print "left"
 	    elif abs(ydist) > 20 and abs(ydist) > abs(xdist):
 		if ydist > 0:
+		    writeNumber(2)
 		    print "down"
 		else:
+		    writeNumber(1)
 		    print "up"
+            else:
+		writeNumber(0)
 	    print "X: " + str(xdist) + ", Y: " + str(ydist)
 	dontoutput = False
 	foundSquare = False
