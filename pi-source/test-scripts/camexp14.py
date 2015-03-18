@@ -61,21 +61,21 @@ while True:
         xdist = xcenter - blob.centroid()[0]
         ydist = ycenter - blob.centroid()[1]
         if abs(xdist) > 20 and abs(xdist) > abs(ydist):
-        if xdist > 0:
-            print "right"
-            writeNumber(4)
-        else:
-            writeNumber(3)
-            print "left"
-        elif abs(ydist) > 20 and abs(ydist) > abs(xdist):
-        if ydist > 0:
-            writeNumber(2)
-            print "down"
-        else:
-            writeNumber(1)
-            print "up"
+            if xdist > 0:
+                print "right"
+                writeNumber(4)
             else:
-        writeNumber(0)
+                writeNumber(3)
+                print "left"
+        elif abs(ydist) > 20 and abs(ydist) > abs(xdist):
+            if ydist > 0:
+                writeNumber(2)
+                print "down"
+            else:
+                writeNumber(1)
+                print "up"
+        else:
+            writeNumber(0)
         # print "X: " + str(xdist) + ", Y: " + str(ydist)
     dontoutput = False
     foundSquare = False
